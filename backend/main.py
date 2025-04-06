@@ -8,7 +8,8 @@ from auth import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 from database import users_collection
 from gemini import ask_gemini  # ✅ AI funksiyasi
-
+from datetime import datetime
+from database import chatlogs_collection 
 from bson.objectid import ObjectId
 
 app = FastAPI()
@@ -24,6 +25,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    response: str
 
 # --------------------- AUTH ------------------------
 
@@ -61,6 +67,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
 @app.get("/me")
 async def read_users_me(email: str = Depends(get_current_user)):
     return {"email": email}
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(req: ChatRequest, email: str = Depends(get_current_user)):
+    answer = ask_gemini(req.message)
+
+    # ➕ Chat logni saqlash
+    chat_entry = {
+        "email": email,
+        "user_message": req.message,
+        "ai_response": answer,
+        "timestamp": datetime.utcnow()
+    }
+    await chatlogs_collection.insert_one(chat_entry)
+
+    return {"response": answer}
 
 # --------------------- AI CHAT (Gemini 1.5 Pro) ------------------------
 

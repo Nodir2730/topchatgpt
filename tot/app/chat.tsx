@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useState, useRef, useEffect } from 'react';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import ChatInput from '../components/ChatInput';
 import MenuOverlay from '../components/MenuOverlay';
 
@@ -29,19 +29,30 @@ export default function ChatScreen() {
 
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
-
+  
     setMessages((prev) => [...prev, { sender: 'user', text }]);
     setIsLoading(true);
-
+  
     try {
+      const token = await AsyncStorage.getItem("token"); // 🔐 Tokenni olish
+  
+      if (!token) {
+        throw new Error("Token topilmadi. Iltimos, qayta tizimga kiring.");
+      }
+  
       const res = await fetch('http://192.168.0.105:8000/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // ✅ SHU QATOR MUHIM
         },
         body: JSON.stringify({ message: text }),
       });
-
+  
+      if (!res.ok) {
+        throw new Error(`Status: ${res.status}`);
+      }
+  
       const data = await res.json();
       setMessages((prev) => [...prev, { sender: 'ai', text: data.response }]);
     } catch (err) {
