@@ -1,19 +1,23 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
   Image,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
 } from 'react-native';
 
-export default function ChatInput() {
+interface ChatInputProps {
+  onSend: (text: string) => void;
+  onFocus?: () => void; // 🔥 yangi props — input bosilganda chaqiriladi
+}
+
+export default function ChatInput({ onSend, onFocus }: ChatInputProps) {
   const [message, setMessage] = useState('');
 
   const handleSend = () => {
-    console.log('Yuborildi:', message);
+    if (!message.trim()) return;
+    onSend(message.trim());
     setMessage('');
   };
 
@@ -22,50 +26,45 @@ export default function ChatInput() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.wrapper}
-    >
-      <View style={styles.container}>
-        <TextInput
-          value={message}
-          onChangeText={setMessage}
-          placeholder="Savolingizni yozing..."
-          multiline
-          style={styles.input}
-          placeholderTextColor="#999"
-        />
+    <View style={styles.container}>
+      <TextInput
+        value={message}
+        onChangeText={setMessage}
+        placeholder="Savolingizni yozing..."
+        multiline
+        style={styles.input}
+        placeholderTextColor="#999"
+        onFocus={onFocus} 
+        // ✅ input bosilganda router.push('/chat') ishlaydi
+        onSubmitEditing={handleSend}
+        returnKeyType="send"
+      />
 
-        <View style={styles.iconRow}>
-          <TouchableOpacity onPress={handleAdd}>
-            <Image
-              source={require('../assets/icons/add.png')}
-              style={styles.icon}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+      <View style={styles.iconRow}>
+        <TouchableOpacity onPress={handleAdd}>
+          <Image
+            source={require('../assets/icons/add.png')}
+            style={styles.icon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleSend}>
-            <Image
-              source={require('../assets/icons/send.png')}
-              style={styles.icon}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={handleSend}>
+          <Image
+            source={require('../assets/icons/send.png')}
+            style={styles.icon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
   container: {
-    width: 350,
-    height: 100,
+    width: '95%',
+    minHeight: 100,
     backgroundColor: '#ffffff',
     borderColor: '#ccc',
     borderWidth: 1,
@@ -76,6 +75,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
+    marginBottom: 10,
   },
   input: {
     flex: 1,
